@@ -4,16 +4,15 @@ use crate::config::Config;
 use crate::transmitter::Transmitter;
 
 pub struct RFM69Transmitter {
-    serial: Box<dyn serial::SerialPort>
+    serial: Box<dyn serial::SerialPort>,
 }
 
 impl RFM69Transmitter {
     pub fn new(config: &Config) -> RFM69Transmitter {
         info!("Initializing RFM69 transmitter...");
 
-        let mut serial = serial::open(&config.rfm69.port).expect(
-            "Unable to open serial port"
-        );
+        let mut serial = serial::open(&config.rfm69.port)
+            .expect("Unable to open serial port");
 
         serial
             .configure(&serial::PortSettings {
@@ -21,11 +20,13 @@ impl RFM69Transmitter {
                 char_size: serial::CharSize::Bits8,
                 parity: serial::Parity::ParityNone,
                 stop_bits: serial::StopBits::Stop1,
-                flow_control: serial::FlowControl::FlowNone
+                flow_control: serial::FlowControl::FlowNone,
             })
             .expect("Unable to configure serial port");
 
-        RFM69Transmitter { serial: Box::new(serial) }
+        RFM69Transmitter {
+            serial: Box::new(serial),
+        }
     }
 }
 

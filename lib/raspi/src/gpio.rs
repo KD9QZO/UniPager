@@ -13,7 +13,7 @@ pub enum Gpio {
         pin_mapping: Option<Vec<usize>>,
     },
     SysFsGpio {
-        pin_mapping: Option<Vec<usize>>
+        pin_mapping: Option<Vec<usize>>,
     },
 }
 
@@ -24,7 +24,7 @@ impl Gpio {
 
         if base.is_none() {
             return Some(Gpio::SysFsGpio {
-                pin_mapping: model.pin_mapping()
+                pin_mapping: model.pin_mapping(),
             });
         }
 
@@ -61,16 +61,21 @@ impl Gpio {
 
     pub fn pin(&self, number: usize, direction: Direction) -> Box<dyn Pin> {
         match self {
-            &Gpio::MemGpio { ref base, ref pin_mapping } => {
-                let number = pin_mapping.as_ref().and_then(|mapping| {
-                    mapping.get(number).map(|num| *num)
-                }).unwrap_or(number);
+            &Gpio::MemGpio {
+                ref base,
+                ref pin_mapping,
+            } => {
+                let number = pin_mapping
+                    .as_ref()
+                    .and_then(|mapping| mapping.get(number).map(|num| *num))
+                    .unwrap_or(number);
                 Box::new(MemGpioPin::new(base.clone(), number, direction))
             }
             &Gpio::SysFsGpio { ref pin_mapping } => {
-                let number = pin_mapping.as_ref().and_then(|mapping| {
-                    mapping.get(number).map(|num| *num)
-                }).unwrap_or(number);
+                let number = pin_mapping
+                    .as_ref()
+                    .and_then(|mapping| mapping.get(number).map(|num| *num))
+                    .unwrap_or(number);
                 Box::new(SysFsGpioPin::new(number, direction))
             }
         }
@@ -127,10 +132,12 @@ impl Pin for SysFsGpioPin {
 
         let direction = match self.direction {
             Direction::Input => sysfs_gpio::Direction::In,
-            Direction::Output => sysfs_gpio::Direction::Out
+            Direction::Output => sysfs_gpio::Direction::Out,
         };
 
-        self.pin.set_direction(direction).expect("Failed to set GPIO direction.");
+        self.pin
+            .set_direction(direction)
+            .expect("Failed to set GPIO direction.");
     }
 
     fn set(&self, value: bool) {
@@ -151,7 +158,11 @@ pub struct MemGpioPin {
 }
 
 impl MemGpioPin {
-    pub fn new(base: Arc<GpioBase>, number: usize, direction: Direction) -> MemGpioPin {
+    pub fn new(
+        base: Arc<GpioBase>,
+        number: usize,
+        direction: Direction,
+    ) -> MemGpioPin {
         let mut pin = MemGpioPin {
             base,
             number,
@@ -170,14 +181,16 @@ impl Pin for MemGpioPin {
 
         match self.direction {
             Direction::Input => unsafe {
-                let p = (*self.base).0.offset((number / 10) as isize) as *mut u32;
+                let p =
+                    (*self.base).0.offset((number / 10) as isize) as *mut u32;
                 *p &= !(0b111 << ((number % 10) * 3));
             },
             Direction::Output => unsafe {
-                let p = (*self.base).0.offset((number / 10) as isize) as *mut u32;
+                let p =
+                    (*self.base).0.offset((number / 10) as isize) as *mut u32;
                 *p &= !(0b111 << ((number % 10) * 3));
                 *p |= 0b1 << ((number % 10) * 3);
-            }
+            },
         };
     }
 

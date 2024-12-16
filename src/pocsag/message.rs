@@ -2,7 +2,7 @@
 #[serde(rename_all = "lowercase")]
 pub enum MessageType {
     Numeric,
-    AlphaNum
+    AlphaNum,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -13,7 +13,7 @@ pub struct Message {
     pub speed: u32,
     pub ric: u32,
     pub func: u8,
-    pub data: String
+    pub data: String,
 }
 
 impl Message {
@@ -30,7 +30,7 @@ impl Default for Message {
             speed: 1200,
             ric: 0,
             func: 3,
-            data: "".to_owned()
+            data: "".to_owned(),
         }
     }
 }

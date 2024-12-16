@@ -1,9 +1,9 @@
-pub mod ptt;
-pub mod dummy;
 pub mod audio;
 pub mod c9000;
-pub mod rfm69;
+pub mod dummy;
+pub mod ptt;
 pub mod raspager;
+pub mod rfm69;
 
 pub use self::audio::AudioTransmitter;
 pub use self::c9000::C9000Transmitter;
@@ -26,16 +26,14 @@ pub fn from_config(config: &Config) -> Box<dyn Transmitter> {
         config::Transmitter::Audio => {
             Box::new(AudioTransmitter::new(config)) as Box<dyn Transmitter>
         }
-        config::Transmitter::Raspager => {
-            Box::new(
-                RaspagerTransmitter::new(config, raspager::pins::RASPAGER1_PINS)
-            ) as Box<dyn Transmitter>
-        }
-        config::Transmitter::Raspager2 => {
-            Box::new(
-                RaspagerTransmitter::new(config, raspager::pins::RASPAGER2_PINS)
-            ) as Box<dyn Transmitter>
-        }
+        config::Transmitter::Raspager => Box::new(RaspagerTransmitter::new(
+            config,
+            raspager::pins::RASPAGER1_PINS,
+        )) as Box<dyn Transmitter>,
+        config::Transmitter::Raspager2 => Box::new(RaspagerTransmitter::new(
+            config,
+            raspager::pins::RASPAGER2_PINS,
+        )) as Box<dyn Transmitter>,
         config::Transmitter::C9000 => {
             Box::new(C9000Transmitter::new(config)) as Box<dyn Transmitter>
         }

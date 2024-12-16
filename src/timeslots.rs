@@ -56,8 +56,7 @@ impl TimeSlot {
         // if the slot is already over use the next block
         if this_slot == current_slot {
             return Duration::new(0, 0);
-        }
-        else if this_slot < current_slot {
+        } else if this_slot < current_slot {
             block_start += 1 << 10;
         }
 
@@ -69,22 +68,19 @@ impl TimeSlot {
 
         let start = Duration::new(seconds, nanoseconds);
 
-        match start.checked_sub(now)
-        {
+        match start.checked_sub(now) {
             Some(duration) => duration,
             None => {
                 error!("TimeSlot calculation broken");
                 error!(
                     "Current Slot: {:X} This Slot: {:X}",
-                    current_slot,
-                    this_slot
+                    current_slot, this_slot
                 );
                 error!("Now: {:?}", now);
                 error!("Start: {:?}", start);
                 if !self.active() {
                     Duration::new(1, 0)
-                }
-                else {
+                } else {
                     Duration::new(0, 0)
                 }
             }
@@ -142,10 +138,10 @@ impl TimeSlots {
         // TODO: dynamic baud rate
         let baudrate = 1200;
         let time_remaining = end.duration_until();
-        let millis_remaining = (time_remaining.as_secs() * 1000) as u32 +
-            time_remaining.subsec_nanos() / 1_000_000;
-        let words_remaining = (millis_remaining as f32) /
-            (1000.0 / (baudrate as f32)) / 32.0;
+        let millis_remaining = (time_remaining.as_secs() * 1000) as u32
+            + time_remaining.subsec_nanos() / 1_000_000;
+        let words_remaining =
+            (millis_remaining as f32) / (1000.0 / (baudrate as f32)) / 32.0;
 
         words_remaining as usize
     }

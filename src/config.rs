@@ -15,14 +15,16 @@ fn default_fallback_servers() -> Vec<(String, u16)> {
     [
         ("dapnetdc1.db0sda.ampr.org", 5672),
         ("dapnetdc2.db0sda.ampr.org", 5672),
-        ("dapnetdc3.db0sda.ampr.org", 5672)
+        ("dapnetdc3.db0sda.ampr.org", 5672),
     ]
-        .iter()
-        .map(|&(ref host, port)| (host.to_string(), port))
-        .collect()
+    .iter()
+    .map(|&(ref host, port)| (host.to_string(), port))
+    .collect()
 }
 
-fn default_mod_deviation() -> u16 { 13 }
+fn default_mod_deviation() -> u16 {
+    13
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(default)]
@@ -67,12 +69,14 @@ impl Default for RaspagerConfig {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(default)]
 pub struct RFM69Config {
-    pub port: String
+    pub port: String,
 }
 
 impl Default for RFM69Config {
     fn default() -> RFM69Config {
-        RFM69Config { port: String::from("/dev/ttyUSB0") }
+        RFM69Config {
+            port: String::from("/dev/ttyUSB0"),
+        }
     }
 }
 
@@ -221,9 +225,8 @@ impl Config {
         match File::open(CONFIG_FILE) {
             Ok(mut file) => {
                 let mut data = String::new();
-                file.read_to_string(&mut data).expect(
-                    "Failed to read config file"
-                );
+                file.read_to_string(&mut data)
+                    .expect("Failed to read config file");
 
                 if let Ok(config) = serde_json::from_str(&data) {
                     config
@@ -244,12 +247,11 @@ impl Config {
     pub fn save(&self) {
         let data = serde_json::to_vec_pretty(self).unwrap();
 
-        let mut new_file = File::create(CONFIG_FILE).expect(
-            "Couldn't create config file"
-        );
+        let mut new_file =
+            File::create(CONFIG_FILE).expect("Couldn't create config file");
 
-        new_file.write_all(data.as_slice()).expect(
-            "Couldn't write to config file"
-        );
+        new_file
+            .write_all(data.as_slice())
+            .expect("Couldn't write to config file");
     }
 }

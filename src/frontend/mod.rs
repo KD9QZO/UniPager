@@ -20,7 +20,7 @@ pub enum Request {
     GetVersion,
     Restart,
     Shutdown,
-    Test
+    Test,
 }
 
 #[derive(Debug, Serialize)]
@@ -32,5 +32,5 @@ pub enum Response {
     Version(String),
     Message(Message),
     Log(u8, String),
-    Authenticated(bool)
+    Authenticated(bool),
 }

@@ -3,12 +3,12 @@ use std::sync::mpsc;
 use futures;
 use futures::channel::mpsc::{UnboundedReceiver, UnboundedSender};
 use futures_util::StreamExt;
-use tokio::runtime::Runtime;
 use serde_json;
+use tokio::runtime::Runtime;
 
-use crate::telemetry::Telemetry;
 use crate::config::Config;
 use crate::message::Message;
+use crate::telemetry::Telemetry;
 use crate::timeslots::{TimeSlot, TimeSlots};
 
 #[derive(Clone, Debug)]
@@ -26,7 +26,7 @@ pub enum Event {
     Log(u8, String),
     Test,
     Shutdown,
-    Restart
+    Restart,
 }
 
 pub type EventReceiver = UnboundedReceiver<Event>;
@@ -46,12 +46,10 @@ pub struct EventDispatcher {
     pub connection: Option<EventSender>,
     pub scheduler: Option<mpsc::Sender<Event>>,
     pub websocket: Option<EventSender>,
-    pub main: Option<EventSender>
+    pub main: Option<EventSender>,
 }
 
-impl EventDispatcher {
-
-}
+impl EventDispatcher {}
 
 pub fn channel() -> (EventSender, EventReceiver) {
     futures::channel::mpsc::unbounded()
@@ -86,8 +84,8 @@ pub fn start(runtime: &Runtime) -> EventHandler {
                         tx.send(event).ok();
                     });
                 }
-                Event::TelemetryUpdate(_) |
-                Event::TelemetryPartialUpdate(_) => {
+                Event::TelemetryUpdate(_)
+                | Event::TelemetryPartialUpdate(_) => {
                     dispatcher.websocket.as_ref().map(|tx| {
                         tx.unbounded_send(event.clone()).ok();
                     });

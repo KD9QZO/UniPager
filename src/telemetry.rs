@@ -1,9 +1,9 @@
 use std::sync::{Mutex, RwLock};
 use std::time::Duration;
 
-use chrono::prelude::*;
 use async_std::prelude::*;
 use async_std::stream::interval;
+use chrono::prelude::*;
 use tokio::runtime::Runtime;
 
 use crate::event::{Event, EventHandler};
@@ -11,8 +11,10 @@ use crate::queue::NUM_PRIORITIES;
 use crate::timeslots::TimeSlots;
 
 lazy_static! {
-    pub static ref TELEMETRY: RwLock<Telemetry> = RwLock::new(Telemetry::default());
-    pub static ref EVENT_HANDLER: Mutex<Option<EventHandler>> = Mutex::new(None);
+    pub static ref TELEMETRY: RwLock<Telemetry> =
+        RwLock::new(Telemetry::default());
+    pub static ref EVENT_HANDLER: Mutex<Option<EventHandler>> =
+        Mutex::new(None);
 }
 
 #[derive(Default, Debug, Serialize, Clone, PartialEq)]
@@ -20,33 +22,33 @@ pub struct Node {
     pub name: String,
     pub port: u16,
     pub connected: bool,
-    pub connected_since: Option<DateTime<Utc>>
+    pub connected_since: Option<DateTime<Utc>>,
 }
 
 #[derive(Default, Debug, Serialize, Clone, PartialEq)]
 pub struct Ntp {
     pub synced: bool,
     pub offset: isize,
-    pub servers: Vec<String>
+    pub servers: Vec<String>,
 }
 
 #[derive(Default, Debug, Serialize, Clone, PartialEq)]
 pub struct Messages {
     pub queued: [usize; NUM_PRIORITIES],
-    pub sent: [usize; NUM_PRIORITIES]
+    pub sent: [usize; NUM_PRIORITIES],
 }
 
 #[derive(Serialize, Debug, Clone, PartialEq)]
 pub struct TransmitterSoftware {
     pub name: String,
-    pub version: String
+    pub version: String,
 }
 
 impl Default for TransmitterSoftware {
     fn default() -> Self {
         TransmitterSoftware {
             name: "UniPager".to_owned(),
-            version: env!("CARGO_PKG_VERSION").to_owned()
+            version: env!("CARGO_PKG_VERSION").to_owned(),
         }
     }
 }
@@ -54,12 +56,12 @@ impl Default for TransmitterSoftware {
 #[derive(Default, Debug, Serialize, Clone, PartialEq)]
 pub struct Config {
     pub timeslots: [bool; 16],
-    pub software: TransmitterSoftware
+    pub software: TransmitterSoftware,
 }
 
 #[derive(Default, Debug, Serialize, Clone)]
 pub struct Hardware {
-    pub platform: String
+    pub platform: String,
 }
 
 #[derive(Default, Debug, Serialize, Clone)]
@@ -70,7 +72,7 @@ pub struct Telemetry {
     pub ntp: Ntp,
     pub messages: Messages,
     pub config: Config,
-    pub hardware: Hardware
+    pub hardware: Hardware,
 }
 
 pub fn get() -> Telemetry {

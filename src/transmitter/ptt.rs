@@ -33,7 +33,7 @@ impl Ptt {
                 info!(
                     "Detected hardware model: {} (GPIOs are only supported on correctly matched hardware)",
                     Model::get());
-              
+
                 let gpio = Gpio::new()
                     .expect("Failed to map GPIO. Do you have sufficient permissions to access GPIO pins?");
 
@@ -71,18 +71,27 @@ impl Ptt {
                 for device in api.devices() {
                     if device.path == path {
                         if device.vendor_id == 0x0d8c
-                            && (device.product_id == 0x013c || device.product_id == 0x000c) {
-                            info!("Found CM108 device {:#06x}/{:#06x}", device.vendor_id, device.product_id);
+                            && (device.product_id == 0x013c
+                                || device.product_id == 0x000c)
+                        {
+                            info!(
+                                "Found CM108 device {:#06x}/{:#06x}",
+                                device.vendor_id, device.product_id
+                            );
                         } else {
-                            error!("Unsupported device {:#06x}/{:#06x}!", device.vendor_id, device.product_id);
+                            error!(
+                                "Unsupported device {:#06x}/{:#06x}!",
+                                device.vendor_id, device.product_id
+                            );
                         }
                     }
                 }
 
-                let cm108device = api.open_path(&path)
-                    .expect("Unable to open HIDraw device");
+                let cm108device =
+                    api.open_path(&path).expect("Unable to open HIDraw device");
                 let mut string = "Device data: manufacturer \"".to_string();
-                let manufacturer = cm108device.get_manufacturer_string().unwrap();
+                let manufacturer =
+                    cm108device.get_manufacturer_string().unwrap();
                 match manufacturer {
                     Some(x) => string.push_str(&x.trim()),
                     None => string.push_str("n/a"),
@@ -137,36 +146,30 @@ impl Ptt {
             }
             Ptt::SerialDtr {
                 ref mut port,
-                inverted
+                inverted,
             } => {
-                port.set_dtr(status != inverted).expect(
-                    "Error setting DTR pin"
-                );
+                port.set_dtr(status != inverted)
+                    .expect("Error setting DTR pin");
             }
             Ptt::SerialRts {
                 ref mut port,
-                inverted
+                inverted,
             } => {
-                port.set_rts(status != inverted).expect(
-                    "Error setting RTS pin"
-                );
+                port.set_rts(status != inverted)
+                    .expect("Error setting RTS pin");
             }
             #[cfg(hid_ptt)]
             Ptt::HidRaw {
                 ref mut device,
                 gpio,
-                inverted
+                inverted,
             } => {
                 if status != inverted {
                     let buf = [0x00, 0x00, gpio, gpio, 0x00];
-                    device.write(&buf).expect(
-                        "Error writing hidraw interface"
-                    );
+                    device.write(&buf).expect("Error writing hidraw interface");
                 } else {
                     let buf = [0x00, 0x00, 0x00, gpio, 0x00];
-                    device.write(&buf).expect(
-                        "Error writing hidraw interface"
-                    );
+                    device.write(&buf).expect("Error writing hidraw interface");
                 }
             }
         }

@@ -2,7 +2,7 @@
 pub struct Encoding {
     pub encode: fn(u8) -> u8,
     pub bits: usize,
-    pub trailing: u8
+    pub trailing: u8,
 }
 
 fn encode_alphanum(byte: u8) -> u8 {
@@ -37,10 +37,10 @@ fn encode_numeric(byte: u8) -> u8 {
 pub const ALPHANUM: Encoding = Encoding {
     encode: encode_alphanum,
     bits: 7,
-    trailing: 0x0
+    trailing: 0x0,
 };
 pub const NUMERIC: Encoding = Encoding {
     encode: encode_numeric,
     bits: 4,
-    trailing: 0xc
+    trailing: 0xc,
 };

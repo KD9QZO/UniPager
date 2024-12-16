@@ -1,10 +1,10 @@
 use std::{thread, time};
 
 use crate::config::Config;
-use raspi::{Direction, Gpio, Model, Pin};
-use crate::transmitter::Transmitter;
 use crate::transmitter::raspager::adf7012::{Adf7012Config, MuxOut};
 use crate::transmitter::raspager::pins::RaspagerPins;
+use crate::transmitter::Transmitter;
+use raspi::{Direction, Gpio, Model, Pin};
 
 #[inline]
 fn delay_us(micros: u32) {
@@ -27,7 +27,7 @@ pub struct RaspagerTransmitter {
     handshake: Box<dyn Pin>,
     ptt: Box<dyn Pin>,
     config: Adf7012Config,
-    output_level: u8
+    output_level: u8,
 }
 
 impl RaspagerTransmitter {
@@ -47,7 +47,7 @@ impl RaspagerTransmitter {
             handshake: gpio.pin(pins.handshake, Direction::Input),
             ptt: gpio.pin(pins.ptt, Direction::Input),
             config: Adf7012Config::new(),
-            output_level: config.raspager.pa_output_level
+            output_level: config.raspager.pa_output_level,
         };
 
         tx.reset();

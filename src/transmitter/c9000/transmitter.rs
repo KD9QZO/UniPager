@@ -1,7 +1,7 @@
 use raspi::{Direction, Gpio, Model, Pin};
 use serial::{self, SerialPort};
+use std::io::Write;
 use std::{thread, time};
-use std::io::{Write};
 
 use crate::config::Config;
 use crate::transmitter::Transmitter;
@@ -12,7 +12,7 @@ pub struct C9000Transmitter {
     send_pin: Box<dyn Pin>,
     status_led_pin: Box<dyn Pin>,
     connected_led_pin: Box<dyn Pin>,
-    serial: Box<dyn serial::SerialPort>
+    serial: Box<dyn serial::SerialPort>,
 }
 
 impl C9000Transmitter {
@@ -24,31 +24,43 @@ impl C9000Transmitter {
 
             if let Ok(mut port) = serial::open(&*config.c9000.dummy_port) {
                 if port
-                       .configure(&serial::PortSettings {
-                           baud_rate: serial::BaudRate::Baud38400,
-                           char_size: serial::CharSize::Bits8,
-                           parity: serial::Parity::ParityNone,
-                           stop_bits: serial::StopBits::Stop1,
-                           flow_control: serial::FlowControl::FlowNone
-                       }).is_err() {
-                    error!("Unable to configure serial port {}", config.c9000.dummy_port);
+                    .configure(&serial::PortSettings {
+                        baud_rate: serial::BaudRate::Baud38400,
+                        char_size: serial::CharSize::Bits8,
+                        parity: serial::Parity::ParityNone,
+                        stop_bits: serial::StopBits::Stop1,
+                        flow_control: serial::FlowControl::FlowNone,
+                    })
+                    .is_err()
+                {
+                    error!(
+                        "Unable to configure serial port {}",
+                        config.c9000.dummy_port
+                    );
                 } else {
-                    if port.write_all(&[config.c9000.dummy_pa_output_level]).is_err() {
-                        error!("Unable to write data to the serial port {}", config.c9000.dummy_port);
+                    if port
+                        .write_all(&[config.c9000.dummy_pa_output_level])
+                        .is_err()
+                    {
+                        error!(
+                            "Unable to write data to the serial port {}",
+                            config.c9000.dummy_port
+                        );
                     }
                 }
             } else {
-               error!("Unable to open serial port {}", config.c9000.dummy_port);
+                error!(
+                    "Unable to open serial port {}",
+                    config.c9000.dummy_port
+                );
             }
-
         }
 
         let model = Model::get();
         info!("Detected {}", model);
 
-        let mut serial = serial::open(model.serial_port()).expect(
-            "Unable to open serial port"
-        );
+        let mut serial = serial::open(model.serial_port())
+            .expect("Unable to open serial port");
 
         serial
             .configure(&serial::PortSettings {
@@ -56,7 +68,7 @@ impl C9000Transmitter {
                 char_size: serial::CharSize::Bits8,
                 parity: serial::Parity::ParityNone,
                 stop_bits: serial::StopBits::Stop1,
-                flow_control: serial::FlowControl::FlowNone
+                flow_control: serial::FlowControl::FlowNone,
             })
             .expect("Unable to configure serial port");
 
@@ -68,7 +80,7 @@ impl C9000Transmitter {
             send_pin: gpio.pin(3, Direction::Input),
             status_led_pin: gpio.pin(10, Direction::Output),
             connected_led_pin: gpio.pin(11, Direction::Output),
-            serial: Box::new(serial)
+            serial: Box::new(serial),
         };
 
         transmitter.reset_pin.set_high();

@@ -1,5 +1,5 @@
 use crate::message::{MessageProvider, ProtocolMessage};
-use crate::pocsag::{Encoding, Message, MessageType, encoding};
+use crate::pocsag::{encoding, Encoding, Message, MessageType};
 
 /// Preamble length in number of 32-bit codewords
 pub const PREAMBLE_LENGTH: u8 = 18;
@@ -12,7 +12,7 @@ enum State {
     Preamble,
     AddressWord,
     MessageWord(usize, Encoding),
-    Completed
+    Completed,
 }
 
 /// POCSAG Generator
@@ -28,19 +28,21 @@ pub struct Generator<'a> {
     // Number of codewords left in current batch
     codewords: u8,
     // Number of codewords generated
-    count: usize
+    count: usize,
 }
 
 impl<'a> Generator<'a> {
     /// Create a new Generator
-    pub fn new(messages: &'a mut dyn MessageProvider, first_msg: Message)
-        -> Generator<'a> {
+    pub fn new(
+        messages: &'a mut dyn MessageProvider,
+        first_msg: Message,
+    ) -> Generator<'a> {
         Generator {
             state: State::Preamble,
             messages,
             message: Some(first_msg),
             codewords: PREAMBLE_LENGTH,
-            count: 0
+            count: 0,
         }
     }
 
@@ -48,12 +50,13 @@ impl<'a> Generator<'a> {
     fn next_message(&mut self) -> State {
         let message = self.messages.next(self.count - 1).map(|msg| msg.message);
         self.message = match message {
-            Some(ProtocolMessage::Pocsag(pocsag_message)) => Some(pocsag_message),
-            _ => None
+            Some(ProtocolMessage::Pocsag(pocsag_message)) => {
+                Some(pocsag_message)
+            }
+            _ => None,
         };
 
-        match self.message
-        {
+        match self.message {
             Some(_) => State::AddressWord,
             None => State::Completed,
         }
@@ -86,11 +89,14 @@ impl<'a> Iterator for Generator<'a> {
     type Item = u32;
 
     fn next(&mut self) -> Option<u32> {
-        trace!("Next generated codeword: ({}, {:?})", self.codewords, self.state);
+        trace!(
+            "Next generated codeword: ({}, {:?})",
+            self.codewords,
+            self.state
+        );
         self.count += 1;
 
-        match (self.codewords, self.state)
-        {
+        match (self.codewords, self.state) {
             // Stop if no codewords are left and everything is completed.
             (0, State::Completed) => None,
 
@@ -120,8 +126,9 @@ impl<'a> Iterator for Generator<'a> {
                 let length =
                     self.message.as_ref().map(|m| m.data.len()).unwrap_or(0);
 
-                let &Message { ric, func, mtype, .. } =
-                    self.message.as_ref().unwrap();
+                let &Message {
+                    ric, func, mtype, ..
+                } = self.message.as_ref().unwrap();
 
                 self.codewords -= 1;
 
@@ -131,10 +138,8 @@ impl<'a> Iterator for Generator<'a> {
                     // Set the next state according to the message type
                     self.state = if length == 0 {
                         self.next_message()
-                    }
-                    else {
-                        match mtype
-                        {
+                    } else {
+                        match mtype {
                             MessageType::Numeric => {
                                 State::MessageWord(0, encoding::NUMERIC)
                             }
@@ -148,8 +153,7 @@ impl<'a> Iterator for Generator<'a> {
                     let addr = (ric & 0x001ffff8) << 10;
                     let func = (func as u32 & 0b11) << 11;
                     Some(parity(crc(addr | func)))
-                }
-                else {
+                } else {
                     Some(IDLE_WORD)
                 }
             }
@@ -169,8 +173,8 @@ impl<'a> Iterator for Generator<'a> {
                     let mut sym = bytes
                         .nth(pos / encoding.bits)
                         .map(encoding.encode)
-                        .unwrap_or(encoding.trailing) >>
-                        (pos % encoding.bits);
+                        .unwrap_or(encoding.trailing)
+                        >> (pos % encoding.bits);
 
                     for _ in 0..20 {
                         // Add the next bit of the symbol to the codeword.
@@ -180,11 +184,11 @@ impl<'a> Iterator for Generator<'a> {
 
                         // If all bits are send, continue with the next symbol.
                         if pos % encoding.bits == 0 {
-                            sym = bytes.next().map(encoding.encode).unwrap_or(
-                                encoding.trailing
-                            );
-                        }
-                        else {
+                            sym = bytes
+                                .next()
+                                .map(encoding.encode)
+                                .unwrap_or(encoding.trailing);
+                        } else {
                             sym >>= 1;
                         }
                     }
@@ -197,8 +201,7 @@ impl<'a> Iterator for Generator<'a> {
                 // completed.
                 self.state = if completed {
                     self.next_message()
-                }
-                else {
+                } else {
                     State::MessageWord(pos, encoding)
                 };
 

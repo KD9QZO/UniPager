@@ -1,7 +1,7 @@
-pub mod generator;
-pub mod testgenerator;
-pub mod message;
 pub mod encoding;
+pub mod generator;
+pub mod message;
+pub mod testgenerator;
 
 pub use self::encoding::Encoding;
 pub use self::generator::Generator;

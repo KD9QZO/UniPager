@@ -1,8 +1,8 @@
-extern crate serial;
-extern crate raspi;
-extern crate serde;
 #[cfg(hid_ptt)]
 extern crate hidapi;
+extern crate raspi;
+extern crate serde;
+extern crate serial;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
@@ -11,35 +11,35 @@ extern crate serde_json;
 extern crate log;
 #[macro_use]
 extern crate lazy_static;
-extern crate hyper;
+extern crate chrono;
 extern crate failure;
 extern crate futures_core;
 extern crate futures_util;
-extern crate tungstenite;
-extern crate chrono;
-extern crate tokio;
+extern crate hyper;
 extern crate reqwest;
+extern crate tokio;
+extern crate tungstenite;
 
 #[macro_use]
 mod telemetry;
 mod config;
-mod logging;
 mod connection;
 mod core;
-mod transmitter;
-mod pocsag;
+mod event;
 mod frontend;
+mod logging;
 mod message;
+mod pocsag;
+mod queue;
 mod scheduler;
 mod timeslots;
-mod queue;
-mod event;
+mod transmitter;
 
 use std::fs::File;
 use std::io::Read;
 
-use tokio::runtime::Runtime;
 use async_std::prelude::*;
+use tokio::runtime::Runtime;
 
 fn print_version() {
     println!("UniPager {}", env!("CARGO_PKG_VERSION"));
@@ -74,7 +74,9 @@ fn main() {
     frontend::websocket::start(&runtime, pass, event_handler.clone());
     frontend::http::start(&runtime, event_handler.clone());
     if config.master.standalone_mode {
-        info!("Starting up in standalone mode. Connection to server is skipped.")
+        info!(
+            "Starting up in standalone mode. Connection to server is skipped."
+        )
     } else {
         timeslots::start(&runtime, event_handler.clone());
         connection::start(&runtime, &config, event_handler.clone());

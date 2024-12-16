@@ -11,38 +11,36 @@ use crate::{config::Config, event::EventHandler};
 pub struct Node {
     pub host: String,
     pub reachable: bool,
-    pub last_seen: Option<String>
+    pub last_seen: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BootstrapResponse {
     pub timeslots: Vec<bool>,
-    pub nodes: HashMap<String, Node>
+    pub nodes: HashMap<String, Node>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HeartbeatResponse {
-    pub status: String
+    pub status: String,
 }
 
 pub async fn bootstrap(
-    config: &Config
+    config: &Config,
 ) -> Result<BootstrapResponse, io::Error> {
     if config.master.call.len() == 0 {
         error!("No callsign configured.");
         Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            "No callsign configured"
+            "No callsign configured",
         ))
-    }
-    else if config.master.auth.len() == 0 {
+    } else if config.master.auth.len() == 0 {
         error!("No auth key configured.");
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
-            "No auth key configured"
+            "No auth key configured",
         ));
-    }
-    else {
+    } else {
         info!(
             "Connecting to {}:{}...",
             config.master.server, config.master.port
@@ -67,7 +65,7 @@ pub async fn bootstrap(
             .map_err(|_| {
                 io::Error::new(
                     io::ErrorKind::InvalidInput,
-                    "Bootstrap connection failed"
+                    "Bootstrap connection failed",
                 )
             })?
             .json()
@@ -75,14 +73,14 @@ pub async fn bootstrap(
             .map_err(|_| {
                 io::Error::new(
                     io::ErrorKind::InvalidInput,
-                    "Bootstrap data parsing failed"
+                    "Bootstrap data parsing failed",
                 )
             })
     }
 }
 
 pub async fn heartbeat(
-    config: &Config
+    config: &Config,
 ) -> Result<HeartbeatResponse, io::Error> {
     info!("Sending Heartbeat");
 
@@ -102,7 +100,7 @@ pub async fn heartbeat(
         .map_err(|_| {
             io::Error::new(
                 io::ErrorKind::InvalidInput,
-                "Heartbeat connection failed"
+                "Heartbeat connection failed",
             )
         })?
         .json()
@@ -110,7 +108,7 @@ pub async fn heartbeat(
         .map_err(|_| {
             io::Error::new(
                 io::ErrorKind::InvalidInput,
-                "Heartbeat data parsing failed"
+                "Heartbeat data parsing failed",
             )
         })
 }

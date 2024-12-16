@@ -10,7 +10,7 @@ pub trait MessageProvider {
 #[serde(tag = "protocol", content = "message")]
 #[serde(rename_all = "lowercase")]
 pub enum ProtocolMessage {
-    Pocsag(pocsag::Message)
+    Pocsag(pocsag::Message),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,22 +21,22 @@ pub struct Message {
     #[serde(default)]
     pub expires_on: Option<DateTime<Utc>>,
     #[serde(flatten)]
-    pub message: ProtocolMessage
+    pub message: ProtocolMessage,
 }
 
 impl Message {
     pub fn is_expired(&self) -> bool {
-        match self.expires_on
-        {
+        match self.expires_on {
             Some(time) => Utc::now() >= time,
             _ => false,
         }
     }
 
-    pub fn generator<'a>(self, provider: &'a mut dyn MessageProvider)
-        -> Box<dyn Iterator<Item = u32> + 'a> {
-        match self.message
-        {
+    pub fn generator<'a>(
+        self,
+        provider: &'a mut dyn MessageProvider,
+    ) -> Box<dyn Iterator<Item = u32> + 'a> {
+        match self.message {
             ProtocolMessage::Pocsag(msg) => {
                 Box::new(pocsag::Generator::new(provider, msg))
             }

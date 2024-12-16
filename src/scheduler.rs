@@ -72,7 +72,9 @@ impl Scheduler {
             while self.queue.is_empty() {
                 info!("Queue Empty, waiting for events.");
                 self.process_next_event();
-                if self.stop { return; }
+                if self.stop {
+                    return;
+                }
             }
 
             if self.config.master.standalone_mode {
@@ -80,7 +82,9 @@ impl Scheduler {
             } else {
                 info!("Queue not empty, waiting for next Timeslot. {} message(s) waiting.", self.queue.len());
                 self.wait_for_next_timeslot();
-                if self.stop { return; }
+                if self.stop {
+                    return;
+                }
                 info!("Available time budget: {}", self.budget);
             }
 
@@ -110,19 +114,21 @@ impl Scheduler {
                 }
             }
 
-            let event = self.slots
+            let event = self
+                .slots
                 .next_allowed()
                 .map(|next_slot| next_slot.duration_until())
                 .map(|duration| self.recv_event_timeout(duration))
                 .unwrap_or_else(|| self.recv_event());
 
-            match event
-            {
+            match event {
                 Some(event) => self.process_event(event),
                 None => return,
             }
 
-            if self.stop { return; }
+            if self.stop {
+                return;
+            }
         }
     }
 
@@ -133,8 +139,7 @@ impl Scheduler {
     }
 
     fn process_event(&mut self, event: Event) {
-        match event
-        {
+        match event {
             Event::MessageReceived(msg) => {
                 self.queue.enqueue(msg);
                 telemetry_update!(messages: |m| {
@@ -188,8 +193,7 @@ impl MessageProvider for Scheduler {
         }
 
         loop {
-            match self.rx.try_recv()
-            {
+            match self.rx.try_recv() {
                 Ok(event) => {
                     self.process_event(event);
                 }

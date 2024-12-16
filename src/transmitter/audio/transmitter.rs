@@ -20,7 +20,10 @@ pub struct AudioTransmitter {
 
 impl AudioTransmitter {
     pub fn new(config: &Config) -> AudioTransmitter {
-        info!("Initializing audio transmitter with baudrate '{}'...", config.audio.baudrate);
+        info!(
+            "Initializing audio transmitter with baudrate '{}'...",
+            config.audio.baudrate
+        );
 
         let device = match &*config.audio.device {
             "" => String::from("default"),
@@ -47,11 +50,14 @@ impl AudioTransmitter {
 }
 
 impl Transmitter for AudioTransmitter {
-    fn send(&mut self, gen: &mut dyn Iterator<Item=u32>) {
+    fn send(&mut self, gen: &mut dyn Iterator<Item = u32>) {
         trace!("Activating PTT to start transmission.");
         self.ptt.set(true);
 
-        trace!("Waiting for {}ms before audio transmission starts.", self.tx_delay);
+        trace!(
+            "Waiting for {}ms before audio transmission starts.",
+            self.tx_delay
+        );
         sleep(Duration::from_millis(self.tx_delay as u64));
 
         let mut buffer: Vec<u8> = Vec::with_capacity(SAMPLE_RATE);
@@ -64,7 +70,8 @@ impl Transmitter for AudioTransmitter {
             self.level);
 
         let low_bit_sample = create_bit_sample(self.samples_per_bit, low_level);
-        let high_bit_sample = create_bit_sample(self.samples_per_bit, high_level);
+        let high_bit_sample =
+            create_bit_sample(self.samples_per_bit, high_level);
         for word in gen {
             for i in 0..32 {
                 let bit = (word & (1 << (31 - i))) != 0;
@@ -88,9 +95,7 @@ impl Transmitter for AudioTransmitter {
             let result = child
                 .stdin
                 .as_mut()
-                .and_then(|stdin| {
-                    stdin.write_all(buffer.as_slice()).ok()
-                });
+                .and_then(|stdin| stdin.write_all(buffer.as_slice()).ok());
 
             if result.is_none() {
                 error!("Failed to write to aplay stdin")

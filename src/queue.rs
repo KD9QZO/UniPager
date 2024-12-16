@@ -12,21 +12,23 @@ pub const NUM_PRIORITIES: usize = 5;
 // From the outside it looks just like a normal queue.
 pub struct Queue {
     queues: Vec<VecDeque<Message>>,
-    sent: [usize; NUM_PRIORITIES]
+    sent: [usize; NUM_PRIORITIES],
 }
 
 impl Queue {
     pub fn new() -> Queue {
         Queue {
             queues: (0..NUM_PRIORITIES).map(|_| VecDeque::new()).collect(),
-            sent: [0; NUM_PRIORITIES]
+            sent: [0; NUM_PRIORITIES],
         }
     }
 
     pub fn enqueue(&mut self, message: Message) {
         self.queues
             .get_mut(message.priority - 1)
-            .map(|queue| { queue.push_back(message); })
+            .map(|queue| {
+                queue.push_back(message);
+            })
             .or_else(|| {
                 error!("Tried to enqueue message for out of range priority.");
                 None

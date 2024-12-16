@@ -7,7 +7,7 @@ pub struct RaspagerPins {
     pub atclk: usize,
     pub atdata: usize,
     pub handshake: usize,
-    pub ptt: usize
+    pub ptt: usize,
 }
 
 pub const RASPAGER1_PINS: RaspagerPins = RaspagerPins {
@@ -19,7 +19,7 @@ pub const RASPAGER1_PINS: RaspagerPins = RaspagerPins {
     atclk: 11,
     atdata: 10,
     handshake: 5,
-    ptt: 4
+    ptt: 4,
 };
 
 pub const RASPAGER2_PINS: RaspagerPins = RaspagerPins {
@@ -31,5 +31,5 @@ pub const RASPAGER2_PINS: RaspagerPins = RaspagerPins {
     atclk: 11,
     atdata: 10,
     handshake: 5,
-    ptt: 4
+    ptt: 4,
 };

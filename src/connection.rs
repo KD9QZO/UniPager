@@ -1,12 +1,14 @@
 use std::time::Duration;
 
-use lapin::{self, message::Delivery, options::*, types::FieldTable,
-            BasicProperties, Connection, ConnectionProperties, Channel};
-use futures::{future::FutureExt, stream::StreamExt, select, pin_mut};
+use futures::{future::FutureExt, pin_mut, select, stream::StreamExt};
 use futures_timer::Delay;
+use lapin::{
+    self, message::Delivery, options::*, types::FieldTable, BasicProperties,
+    Channel, Connection, ConnectionProperties,
+};
+use serde_json;
 use tokio::{self, runtime::Runtime};
 use tokio_amqp::*;
-use serde_json;
 
 use crate::config::Config;
 use crate::core;
@@ -21,7 +23,7 @@ struct CoreConnection {
     event_receiver: EventReceiver,
     routing_key: String,
     telemetry_routing_key: String,
-    restart: bool
+    restart: bool,
 }
 
 impl CoreConnection {
@@ -35,7 +37,7 @@ impl CoreConnection {
             event_receiver: rx,
             routing_key: "".to_owned(),
             telemetry_routing_key: "".to_owned(),
-            restart: true
+            restart: true,
         }
     }
 
@@ -44,22 +46,28 @@ impl CoreConnection {
             self.handle_events(None, None).await;
 
             if let Ok(response) = core::bootstrap(&self.config).await {
-                info!("Bootstrap successful. Found {} nodes.", response.nodes.len());
+                info!(
+                    "Bootstrap successful. Found {} nodes.",
+                    response.nodes.len()
+                );
 
                 let timeslots = TimeSlots::from_vec(response.timeslots);
-                self.event_handler.publish(Event::TimeslotsUpdate(timeslots));
+                self.event_handler
+                    .publish(Event::TimeslotsUpdate(timeslots));
 
                 info!("Timeslots updated: {:?}", timeslots);
 
                 self.run().await;
                 warn!("RabbitMQ Connection lost.");
-            }
-            else {
+            } else {
                 error!(
                     "Bootstrap connection failed. Retrying in {} Seconds...",
                     self.config.master.reconnect_timeout
                 );
-                Delay::new(Duration::from_secs(self.config.master.reconnect_timeout)).await;
+                Delay::new(Duration::from_secs(
+                    self.config.master.reconnect_timeout,
+                ))
+                .await;
             }
         }
     }
@@ -76,7 +84,8 @@ impl CoreConnection {
         let host = &self.config.master.server;
         let port = 5672;
 
-        let addr = format!("amqp://{}:{}@{}:{}/%2f", user, auth_key, &**host, port);
+        let addr =
+            format!("amqp://{}:{}@{}:{}/%2f", user, auth_key, &**host, port);
 
         telemetry_update!(node: &|node: &mut telemetry::Node| {
             *node = telemetry::Node {
@@ -91,8 +100,9 @@ impl CoreConnection {
 
         let conn = Connection::connect(
             &addr,
-            ConnectionProperties::default().with_tokio()
-        ).await?;
+            ConnectionProperties::default().with_tokio(),
+        )
+        .await?;
 
         let channel = conn.create_channel().await?;
 
@@ -100,7 +110,7 @@ impl CoreConnection {
             .queue_declare(
                 &call,
                 QueueDeclareOptions::default(),
-                FieldTable::default()
+                FieldTable::default(),
             )
             .await?;
 
@@ -110,7 +120,7 @@ impl CoreConnection {
                 "dapnet.local_calls",
                 &*self.routing_key,
                 QueueBindOptions::default(),
-                FieldTable::default()
+                FieldTable::default(),
             )
             .await?;
 
@@ -119,7 +129,7 @@ impl CoreConnection {
                 &*queue.name().to_string(),
                 "consumer",
                 BasicConsumeOptions::default(),
-                FieldTable::default()
+                FieldTable::default(),
             )
             .await?;
 
@@ -167,7 +177,11 @@ impl CoreConnection {
         Ok(())
     }
 
-    async fn handle_delivery(&mut self, delivery: Delivery, channel: &Channel) -> Result<(), lapin::Error> {
+    async fn handle_delivery(
+        &mut self,
+        delivery: Delivery,
+        channel: &Channel,
+    ) -> Result<(), lapin::Error> {
         let msg: Option<Message> = ::std::str::from_utf8(&delivery.data)
             .ok()
             .and_then(|str| serde_json::from_str(&str).ok());
@@ -175,39 +189,52 @@ impl CoreConnection {
         if let Some(msg) = msg {
             info!("Message received: {:?}", msg);
             self.event_handler.publish(Event::MessageReceived(msg));
-        }
-        else {
+        } else {
             warn!("Could not decode incoming message");
         }
 
         channel
-            .basic_ack(
-                delivery.delivery_tag,
-                BasicAckOptions::default()
-            )
+            .basic_ack(delivery.delivery_tag, BasicAckOptions::default())
             .map(|_| ())
             .await;
 
         Ok(())
     }
 
-    async fn handle_events(&mut self, conn: Option<&Connection>, channel: Option<&Channel>) -> Result<(), lapin::Error> {
+    async fn handle_events(
+        &mut self,
+        conn: Option<&Connection>,
+        channel: Option<&Channel>,
+    ) -> Result<(), lapin::Error> {
         while let Ok(Some(event)) = self.event_receiver.try_next() {
             self.handle_event(event, conn, channel).await?;
         }
         Ok(())
     }
 
-    async fn handle_event(&mut self, event: Event, conn: Option<&Connection>, channel: Option<&Channel>) -> Result<(), lapin::Error> {
+    async fn handle_event(
+        &mut self,
+        event: Event,
+        conn: Option<&Connection>,
+        channel: Option<&Channel>,
+    ) -> Result<(), lapin::Error> {
         match event {
             Event::TelemetryUpdate(telemetry) => {
                 if let Some(channel) = channel {
-                    self.send_telemetry(channel, serde_json::to_vec(&telemetry).unwrap()).await?;
+                    self.send_telemetry(
+                        channel,
+                        serde_json::to_vec(&telemetry).unwrap(),
+                    )
+                    .await?;
                 }
             }
             Event::TelemetryPartialUpdate(telemetry) => {
                 if let Some(channel) = channel {
-                    self.send_telemetry(channel, serde_json::to_vec(&telemetry).unwrap()).await?;
+                    self.send_telemetry(
+                        channel,
+                        serde_json::to_vec(&telemetry).unwrap(),
+                    )
+                    .await?;
                 }
             }
             Event::ConfigUpdate(new_config) => {
@@ -234,19 +261,27 @@ impl CoreConnection {
         Ok(())
     }
 
-    async fn send_telemetry(&self, channel: &Channel, data: Vec<u8>) -> Result<(), lapin::Error> {
+    async fn send_telemetry(
+        &self,
+        channel: &Channel,
+        data: Vec<u8>,
+    ) -> Result<(), lapin::Error> {
         channel
             .basic_publish(
                 "dapnet.telemetry",
                 &*self.telemetry_routing_key,
                 BasicPublishOptions::default(),
                 data,
-                BasicProperties::default()
-            ).map(|_| Ok(())).await
+                BasicProperties::default(),
+            )
+            .map(|_| Ok(()))
+            .await
     }
 }
 
 pub fn start(runtime: &Runtime, config: &Config, event_handler: EventHandler) {
     let mut conn = CoreConnection::new(config.clone(), event_handler.clone());
-    runtime.spawn(async move { conn.start().await; });
+    runtime.spawn(async move {
+        conn.start().await;
+    });
 }

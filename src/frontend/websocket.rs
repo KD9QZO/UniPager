@@ -2,18 +2,18 @@ use futures::channel::mpsc::UnboundedSender;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
+use futures;
+use futures_util::{StreamExt, TryStreamExt};
+use serde_json;
 use std::net::SocketAddr;
+use tokio;
 use tokio::net::{TcpListener, TcpStream};
 use tokio::runtime::Runtime;
-use tokio;
-use serde_json;
-use futures;
 use tungstenite::protocol::Message;
-use futures_util::{StreamExt, TryStreamExt};
 
-use crate::frontend::{Request, Response};
 use crate::config;
 use crate::event::{self, Event, EventHandler};
+use crate::frontend::{Request, Response};
 use crate::telemetry;
 use crate::timeslots::TimeSlot;
 
@@ -23,7 +23,7 @@ struct Connection {
     tx: UnboundedSender<Response>,
     password: Option<String>,
     auth: bool,
-    event_handler: EventHandler
+    event_handler: EventHandler,
 }
 
 impl Connection {
@@ -34,19 +34,16 @@ impl Connection {
 
             let res = Response::Authenticated(self.auth);
             self.tx.unbounded_send(res).ok();
-        }
-        else if self.auth {
+        } else if self.auth {
             self.handle_request(req);
-        }
-        else {
+        } else {
             let res = Response::Authenticated(false);
             self.tx.unbounded_send(res).ok();
         }
     }
 
     fn handle_request(&mut self, req: &Request) {
-        match req
-        {
+        match req {
             Request::SetConfig(new_config) => {
                 let config = new_config.clone();
                 config::set(&config);
@@ -81,19 +78,24 @@ impl Connection {
             Request::Test => {
                 info!("Initiating test procedure...");
                 self.event_handler.publish(Event::Test);
-            },
+            }
             Request::Restart => {
                 self.event_handler.publish(Event::Restart);
-            },
+            }
             Request::Shutdown => {
                 self.event_handler.publish(Event::Shutdown);
-            },
+            }
             Request::Authenticate(_) => {}
         }
     }
 }
 
-async fn handle_connection(connections: PeerMap, pass: Option<String>, event_handler: EventHandler, stream: TcpStream) {
+async fn handle_connection(
+    connections: PeerMap,
+    pass: Option<String>,
+    event_handler: EventHandler,
+    stream: TcpStream,
+) {
     let addr = stream.peer_addr().unwrap();
 
     let ws_stream = tokio_tungstenite::accept_async(stream).await.unwrap();
@@ -105,7 +107,7 @@ async fn handle_connection(connections: PeerMap, pass: Option<String>, event_han
         tx: tx.clone(),
         password: pass.to_owned(),
         auth: false,
-        event_handler: event_handler
+        event_handler: event_handler,
     };
 
     connections.lock().unwrap().insert(addr, tx);
@@ -116,25 +118,29 @@ async fn handle_connection(connections: PeerMap, pass: Option<String>, event_han
             .and_then(|str| serde_json::from_str(&str).ok())
             .map(|req| connection.handle(&req))
             .or_else(|| {
-                warn!(
-                    "Received unreadable websocket request."
-                );
+                warn!("Received unreadable websocket request.");
                 None
             });
 
         futures::future::ok(())
     });
 
-    let ws_writer = rx.map(|msg| {
-        let data = serde_json::to_string(&msg).unwrap();
-        Ok(Message::text(data))
-    }).forward(sink);
+    let ws_writer = rx
+        .map(|msg| {
+            let data = serde_json::to_string(&msg).unwrap();
+            Ok(Message::text(data))
+        })
+        .forward(sink);
 
     futures::future::select(ws_reader, ws_writer).await;
     connections.lock().unwrap().remove(&addr);
 }
 
-pub fn start(runtime: &Runtime, pass: Option<String>, event_handler: EventHandler) {
+pub fn start(
+    runtime: &Runtime,
+    pass: Option<String>,
+    event_handler: EventHandler,
+) {
     let (tx, rx) = event::channel();
 
     event_handler.publish(Event::RegisterWebsocket(tx));
@@ -156,16 +162,14 @@ pub fn start(runtime: &Runtime, pass: Option<String>, event_handler: EventHandle
                     Event::TelemetryPartialUpdate(value) => {
                         Some(Response::TelemetryUpdate(value))
                     }
-                    Event::MessageReceived(msg) => {
-                        Some(Response::Message(msg))
-                    }
+                    Event::MessageReceived(msg) => Some(Response::Message(msg)),
                     Event::Timeslot(timeslot) => {
                         Some(Response::Timeslot(timeslot))
                     }
                     Event::Log(level, message) => {
                         Some(Response::Log(level, message))
                     }
-                    _ => None
+                    _ => None,
                 };
 
                 if let Some(response) = response {
@@ -178,11 +182,13 @@ pub fn start(runtime: &Runtime, pass: Option<String>, event_handler: EventHandle
     runtime.spawn(async move {
         let mut socket = TcpListener::bind(&addr).await.unwrap();
 
-        while let Ok ((stream, _)) = socket.accept().await {
-            tokio::spawn(
-                handle_connection(connections.clone(), pass.to_owned(),
-                                  event_handler.clone(), stream)
-            );
+        while let Ok((stream, _)) = socket.accept().await {
+            tokio::spawn(handle_connection(
+                connections.clone(),
+                pass.to_owned(),
+                event_handler.clone(),
+                stream,
+            ));
         }
 
         info!("Shutting down websocket server!");

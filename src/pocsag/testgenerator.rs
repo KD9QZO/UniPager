@@ -1,5 +1,5 @@
 pub struct TestGenerator {
-    length: usize
+    length: usize,
 }
 
 impl<'a> TestGenerator {

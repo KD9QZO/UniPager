@@ -16,7 +16,7 @@ pub struct Status {
     pub master: Option<String>,
     pub version: String,
     pub calls_tx: usize,
-    pub calls_rx: usize
+    pub calls_rx: usize,
 }
 
 impl Status {
@@ -30,7 +30,7 @@ impl Status {
             master: None,
             version: env!("CARGO_PKG_VERSION").to_string(),
             calls_rx: 0,
-            calls_tx: 0
+            calls_tx: 0,
         }
     }
 }
