@@ -1,9 +1,26 @@
+#
+# .gitignore
+#
+
+## BACKUP & TEMPORARY FILES ##
+
+*~
+*.bak
+*.tmp
+
+
+## CONFIGS & SECRETS ##
+
 target
 config.json
 password
 
-# IntelliJ Project Files
+
+## IntelliJ Project Files ##
+
 .idea/
 
-# Apple files
+
+## Apple files ##
+
 .DS_Store
