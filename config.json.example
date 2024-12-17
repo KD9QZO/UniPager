@@ -1,0 +1,53 @@
+{
+  "master": {
+    "server": "dapnetdc2.db0sda.ampr.org",
+    "port": 80,
+    "call": "n0call",
+    "auth": "",
+    "fallback": [
+      [
+        "dapnetdc1.db0sda.ampr.org",
+        5672
+      ],
+      [
+        "dapnetdc2.db0sda.ampr.org",
+        5672
+      ],
+      [
+        "dapnetdc3.db0sda.ampr.org",
+        5672
+      ]
+    ],
+    "reconnect_timeout": 30,
+    "standalone_mode": false
+  },
+  "transmitter": "Dummy",
+  "ptt": {
+    "method": "Gpio",
+    "inverted": false,
+    "gpio_pin": 0,
+    "serial_port": "/dev/ttyS0"
+  },
+  "raspager": {
+    "freq": 439987500,
+    "freq_corr": 0,
+    "pa_output_level": 63,
+    "mod_deviation": 13
+  },
+  "c9000": {
+    "baudrate": 38400,
+    "dummy_enabled": false,
+    "dummy_port": "/dev/ttyUSB0",
+    "dummy_pa_output_level": 0
+  },
+  "audio": {
+    "device": "default",
+    "level": 127,
+    "inverted": false,
+    "tx_delay": 0,
+    "baudrate": 1200
+  },
+  "rfm69": {
+    "port": "/dev/ttyUSB0"
+  }
+}
